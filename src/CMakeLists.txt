@@ -10,7 +10,7 @@ find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw3)
 
-add_executable(executable exercise3_chapter1.cpp glad.c)
+add_executable(executable chapter7.cpp glad.c)
 
 target_include_directories(executable PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} include)
 
