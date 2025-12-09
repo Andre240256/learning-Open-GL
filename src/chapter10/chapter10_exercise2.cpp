@@ -8,21 +8,23 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "include/shader.hpp"
+#include "include/camera.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "include/stb_image.h"
 
 //functions declarations
 void framebuffer_size_callback(GLFWwindow * window, int width, int height);
 void processInput(GLFWwindow * window, Shader * shader);
+void mouse_callback(GLFWwindow * window, double xpos, double ypos);
+void scroll_callback(GLFWwindow * window, double xoffset, double yoffset);
+glm::mat4 matrixLookAt(glm::vec3 cameraPos, glm::vec3 cameraDir, glm::vec3 cameraUp);
 
 //global variables
-glm::vec3 cameraPos;
-glm::vec3 cameraFront;
-glm::vec3 cameraUp;
-
+cam camera;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float mixValue = 0.2f;
 
 int main()
 {
@@ -54,6 +56,10 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
@@ -217,16 +223,7 @@ int main()
     
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 model = glm::mat4(1.0f);
-
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f,
-                                    0.1f, 100.0f);
-    shaderprogram.setMat4("projection", &projection);
-
-    cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
+    glm::mat4 projection = glm::mat4 (1.0f);
 
     while(!glfwWindowShouldClose(window)){
         float currentFrame = glfwGetTime();
@@ -242,8 +239,14 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = matrixLookAt(camera.cameraPos, camera.cameraPos + camera.cameraFront
+                            ,camera.cameraUp);
+
         shaderprogram.setMat4("view", &view);
+
+        projection = glm::perspective(glm::radians(camera.zoom), 800.0f/600.0f,
+                                    0.1f, 100.0f);
+        shaderprogram.setMat4("projection", &projection);
 
         glBindVertexArray(VAO);
         for(int i = 0; i < 10; i++)
@@ -284,9 +287,7 @@ void framebuffer_size_callback(GLFWwindow * window, int width, int height)
 }
 
 void processInput(GLFWwindow* window, Shader * shader)
-{
-    float cameraSpeed = 2.5f * deltaTime;
-    
+{ 
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -300,16 +301,45 @@ void processInput(GLFWwindow* window, Shader * shader)
         shader->setFloat("mixValue", mixValue);
     }
 
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-        cameraPos += cameraSpeed * cameraFront;
-    }
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-        cameraPos -=  cameraSpeed * cameraFront;
-    }
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-        cameraPos +=  cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
-    }
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-        cameraPos -=  cameraSpeed * glm::normalize(glm::cross(cameraFront, cameraUp));
-    }
+    camera.camPos(window, deltaTime);
 }
+
+void mouse_callback(GLFWwindow * window, double xpos, double ypos)
+{
+   camera.camDir(window, xpos, ypos);
+}
+
+void scroll_callback(GLFWwindow * window, double xoffset, double yoffset)
+{
+   camera.camZoom(yoffset);
+}
+
+glm::mat4 matrixLookAt(glm::vec3 cameraPos, glm::vec3 cameraDir, glm::vec3 cameraUp){
+    glm::vec3 zAxis = glm::normalize(cameraPos - cameraDir);
+    glm::vec3 xAxis = glm::normalize(glm::cross(cameraUp, zAxis));
+    glm::vec3 yAxis = glm::cross(zAxis, xAxis);
+
+    glm::vec3 posVec = glm::vec3(-cameraPos);
+    
+    glm::mat4 viewMatrix = glm::mat4(1.0f);
+    viewMatrix[0][0] = xAxis.x; 
+    viewMatrix[1][0] = xAxis.y;
+    viewMatrix[2][0] = xAxis.z;
+
+    viewMatrix[0][1] = yAxis.x;
+    viewMatrix[1][1] = yAxis.y;
+    viewMatrix[2][1] = yAxis.z;
+
+    viewMatrix[0][2] = zAxis.x;
+    viewMatrix[1][2] = zAxis.y;
+    viewMatrix[2][2] = zAxis.z;
+
+    viewMatrix[3][0] = -glm::dot(xAxis, cameraPos);
+    viewMatrix[3][1] = -glm::dot(yAxis, cameraPos);
+    viewMatrix[3][2] = -glm::dot(zAxis, cameraPos);
+
+    return viewMatrix;
+}
+
+
+
