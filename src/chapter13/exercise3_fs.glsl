@@ -3,11 +3,11 @@ out vec4 FragColor;
 
 in vec3 normal;
 in vec3 FragPos;
+in mat4 viewMat;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
 uniform vec3 lightPos;
-uniform vec3 viewPos;
 
 void main()
 {
@@ -17,13 +17,14 @@ void main()
 
     //DIFUSE LIGHT
     vec3 norm = normalize(normal);
-    vec3 lightDir = normalize(lightPos - FragPos);
+    vec3 viewLightPos = vec3(viewMat * vec4(lightPos, 1.0f));
+    vec3 lightDir = normalize( viewLightPos- FragPos);
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 diffuse = diff * lightColor;
 
     //SPECULAR LIGHT
     float specularStrenght = 0.5f;
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize( - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specular = specularStrenght * spec * lightColor;

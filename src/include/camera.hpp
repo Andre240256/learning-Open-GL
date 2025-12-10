@@ -63,17 +63,23 @@ void cam::camPos(GLFWwindow * window, float deltaTime)
     float camSpeed = deltaTime * velocity;
 
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-            this->cameraPos += camSpeed * this->cameraFront;
-        }
-        if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-            this->cameraPos -=  camSpeed * this->cameraFront;
-        }
-        if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-            this->cameraPos +=  camSpeed * glm::normalize(glm::cross(this->cameraFront, this->cameraUp));
-        }
-        if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-            this->cameraPos -=  camSpeed * glm::normalize(glm::cross(this->cameraFront, this->cameraUp));
-        }
+        this->cameraPos += camSpeed * this->cameraFront;
+    }
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        this->cameraPos -=  camSpeed * this->cameraFront;
+    }
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+        this->cameraPos +=  camSpeed * glm::normalize(glm::cross(this->cameraFront, this->cameraUp));
+    }
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+        this->cameraPos -=  camSpeed * glm::normalize(glm::cross(this->cameraFront, this->cameraUp));
+    }
+    if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
+        this->cameraPos += camSpeed * this->cameraUp; 
+    }
+    if(glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS){
+        this->cameraPos -= camSpeed * this->cameraUp;         
+    }
 }
 
 void cam::camDir(GLFWwindow * window, double xpos, double ypos)
