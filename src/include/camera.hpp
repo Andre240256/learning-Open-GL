@@ -21,6 +21,9 @@ public:
     void camDir(GLFWwindow * window, double xpos, double ypos);
     void camZoom(double yoffset);
 
+    //camera Transformations
+    glm::mat4 getViewMat();
+
     float yaw;
     float pitch;
     float zoom;
@@ -118,5 +121,14 @@ void cam::camZoom(double yoffset){
     if(zoom > 45.0f)
         zoom = 45.0f;
 }
+
+//CAMERA TRANSFORMS
+glm::mat4 cam::getViewMat()
+{
+    return glm::lookAt(this->cameraPos, 
+                    this->cameraPos + this->cameraFront,
+                    this->cameraUp);
+}
+
 #endif
 
