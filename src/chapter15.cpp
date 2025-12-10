@@ -10,7 +10,7 @@
 #include "include/shader.hpp"
 #include "include/camera.hpp"
 #define STB_IMAGE_IMPLEMENTATION
-#include "include/stb_image.h"
+#include "stb_image.h"
 
 //functions declarations
 void framebuffer_size_callback(GLFWwindow * window, int width, int height);
@@ -105,15 +105,76 @@ int main()
     };
 
 
-
+    //create shaders
     Shader shaderProgram("src/shaders/vertex_shader.glsl",
                         "src/shaders/fragment_shader.glsl");
     Shader lightShader("src/shaders/vertex_shader.glsl",
                         "src/shaders/fragment_shader_light.glsl");   
-    //create buffers
+           
+          
+    //create Diffuse Map
+    unsigned int diffuseMap;
+    glGenTextures(1, &diffuseMap);  
+    glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
+    //set the texture wraping/filtering options (on currently bound texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);       
+
+    //load textures
+    int height, width, nrChannels;
+    unsigned char * data = stbi_load("src/textures/container2.png", &width, &height,
+                                    &nrChannels, 0);
+    if(data){
+        GLenum format;
+        if (nrChannels == 3)
+            format = GL_RGB;
+        else if (nrChannels == 4)
+            format = GL_RGBA;
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0 , format,
+                GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else{
+        std::cout << "FAILED TO LOAD TEXTURE" << std::endl;
+    }
+
+    //Create Specular Map
+    unsigned int specularMap;
+    glGenTextures(1, &specularMap);
+    glBindTexture(GL_TEXTURE_2D, specularMap);
     
-    
+    //set the texture wraping/filtering options (on currently bound texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);   
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);       
+
+    //load textures
+    unsigned char * specularMapData = stbi_load("src/textures/container2_specular.png",
+                                                &width, &height, &nrChannels, 0);
+    if(specularMapData){
+        GLenum format;
+        if(nrChannels == 3)
+            format = GL_RGB;
+        else if(nrChannels == 4)
+            format = GL_RGBA;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 
+                    0, format, GL_UNSIGNED_BYTE, specularMapData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else{
+        std::cout << "FAILED TO LOAD TEXTURE" << std::endl;
+    }
+
+    stbi_image_free(specularMapData);
+    stbi_image_free(data);
+                        
+    //create buffers
     //create VBO and VBO
     GLuint VBO;
     GLuint VAO;
@@ -136,7 +197,12 @@ int main()
     //binding (locaion = 1)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float),
     (void*)(3*sizeof(float)));
-    glad_glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(1);
+
+    //binding (location = 2)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float),
+    (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     //disbind VBO and VAO
     glBindVertexArray(0);
@@ -157,16 +223,20 @@ int main()
     glBindVertexArray(0);
     
     glm::vec3 lightSourcePosition(1.2f, 1.0f, 2.0f);
-    
+    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
     shaderProgram.use();
-    shaderProgram.setVec3("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    shaderProgram.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    shaderProgram.setVec3("lightPos", lightSourcePosition);
 
-    
-    lightShader.use();
-    lightShader.setVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    
+    // shaderProgram.setVec3("material.specular",glm::vec3(1.0f));
+    shaderProgram.setFloat("material.shininess", 32.0f);
+    shaderProgram.setInt("material.diffuse", 0);
+    shaderProgram.setInt("material.specular", 1);
+
+
+    shaderProgram.setVec3("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    shaderProgram.setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
+    shaderProgram.setVec3("light.specular",glm::vec3( 2.0f, 2.0f, 2.0f));
+    shaderProgram.setVec3("light.position", lightSourcePosition);
+
     while(!glfwWindowShouldClose(window)){
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -174,13 +244,10 @@ int main()
         
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        shaderProgram.setVec3("viewPos", camera.cameraPos);
         
-        //Cube drawing
         shaderProgram.use();
         
-        
+        //Positions Coords Transforms
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4 (1.0f);
@@ -198,9 +265,17 @@ int main()
         shaderProgram.setMat4("model", model);
         shaderProgram.setMat4("projection", projection);
         shaderProgram.setMat4("view", view);
-       
-        shaderProgram.setVec3("viewPos", camera.cameraPos);
 
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+
+        shaderProgram.setVec3("viewPos", camera.cameraPos);
+        
+        //CUBE DRAWING
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
@@ -216,6 +291,7 @@ int main()
         lightShader.setMat4("projection", projection);
         lightShader.setMat4("view", view);
 
+        lightShader.setVec3("lightColor", lightColor);
 
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
