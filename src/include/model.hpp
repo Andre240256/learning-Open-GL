@@ -17,16 +17,17 @@ class Shader;
 class Model
 {
 public:
+    //model data
+    std::vector <Mesh> meshes;
+    std::string directory;
+    std::vector <Texture> textures_loaded;
+    
     //CONSTRUCTOR
     Model(const std::string& path);
     
     void Draw(Shader & shader);
 
 private:
-    //model data
-    std::vector <Mesh> meshes;
-    std::string directory;
-    std::vector <Texture> textures_loaded;
 
     void loadModel(const std::string& path);
     void processNode(aiNode * node, const aiScene * scene);
@@ -66,6 +67,7 @@ void Model::loadModel(const std::string& path)
     processNode(scene->mRootNode, scene);
 }
 
+//PRIVATE FUNCTIONS
 void Model::processNode(aiNode * node, const aiScene * scene)
 {
     //process all the node's meshes (if any)

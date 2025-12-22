@@ -30,16 +30,16 @@ public:
     std::vector <Vertex> vertices;
     std::vector <unsigned int> indices;
     std::vector<Texture> textures;
+    //render data
+    unsigned int VAO, VBO, EBO;
 
     //constructor
     Mesh(std::vector <Vertex> vertices, std::vector <unsigned int> indices,
         std::vector <Texture> texture);
 
     void Draw(Shader &shader);
-
+    
 private:
-    //render data
-    unsigned int VAO, VBO, EBO;
 
     void setupMesh();
 };
