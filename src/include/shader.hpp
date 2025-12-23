@@ -29,6 +29,7 @@ public:
     void setFloat(const std::string &name, float  value) const;
     void setMat4(const std::string &name, const glm::mat4 & mat) const;
     void setVec3(const std::string &name, const glm::vec3 & vec) const;
+    void setVec2(const std::string &name, const glm::vec2 & vec) const;
 
     //getters
     float getFloat(const std::string & name) const;
@@ -234,6 +235,9 @@ void Shader::setMat4(const std::string &name, const glm::mat4 & mat) const{
 }
 void Shader::setVec3(const std::string &name, const glm::vec3 & vec) const{
     glUniform3fv(glGetUniformLocation(this->ID, name.c_str()), 1, glm::value_ptr(vec));
+}
+void Shader::setVec2(const std::string &name, const glm::vec2 &vec) const {
+    glUniform2fv(glGetUniformLocation(this->ID, name.c_str()), 1, glm::value_ptr(vec));
 }
 
 //getters
