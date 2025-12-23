@@ -2,3 +2,6 @@
 build/
 log.txt
 src/textures/backpack/
+src/textures/planet/
+src/textures/rock/
+src/textures/wood/

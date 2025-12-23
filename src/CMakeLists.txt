@@ -8,11 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(assimp REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw3)
 
-add_executable(executable chapter13.cpp glad.c)
+add_executable(executable chapter33.cpp glad.c)
 
 target_include_directories(executable PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS} include)
 
-target_link_libraries(executable PUBLIC ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES})
-
+target_link_libraries(executable PUBLIC ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} assimp)
